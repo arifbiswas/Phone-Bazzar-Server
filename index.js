@@ -16,6 +16,24 @@ async function run(){
         const UserCollection = Client.db("PhoneBazaar").collection("user")
         const ProductsCollection = Client.db("PhoneBazaar").collection("products")
 
+
+        // role cheack 
+        app.get("/role" ,async(req , res)=>{
+            try {
+                const email = req.query.email;
+            const query = {email : email}
+            const dbEmail = await UserCollection.findOne(query);
+            if(!dbEmail){
+                res.status(403).send({message : "forbidden"})
+            }
+
+            res.send({role : dbEmail.role})
+            } catch (error) {
+                console.log(error);
+            }
+        })
+
+
         // CategoriesCollection 
         app.post("/categories", async(req,res)=>{
             const category = req.body;
@@ -80,11 +98,22 @@ async function run(){
         })
         // UserCollection End 
 
-        app.get("/products/:name",async(req , res)=>{
-            const name = req.params.name;
-            const query = {
-                productCategory : name
-            }
+        // ProductsCollection 
+
+        app.get("/products",async(req , res)=>{
+            const name = req.query.name;
+            const email = req.query.email;
+            let query = {}
+             if(name){
+                query = {
+                    productCategory : name
+                }
+             }
+             if(email){
+                query = {
+                    email : email
+                }
+             }
 
             const products = await ProductsCollection.find(query).toArray();
             res.send(products);
@@ -96,7 +125,7 @@ async function run(){
             const product = await ProductsCollection.findOne(query);
             res.send(product);
         })
-
+         // addProduct 
         app.post("/products",async(req,res)=>{
             try {
                 const product = req.body ;
@@ -106,9 +135,7 @@ async function run(){
                 console.log(error);
             }
         })
-        // addProduct 
-
-        
+       
 
         // addProduct End
 
