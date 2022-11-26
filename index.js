@@ -16,6 +16,7 @@ async function run(){
         const UserCollection = Client.db("PhoneBazaar").collection("user")
         const ProductsCollection = Client.db("PhoneBazaar").collection("products")
         const OrderCollection = Client.db("PhoneBazaar").collection("orders")
+        const CartCollection = Client.db("PhoneBazaar").collection("cart")
 
 
         // role cheack 
@@ -165,8 +166,34 @@ async function run(){
             console.log(error);
            }
         })
-        
+        // Orders Porducts End
+        // Cart Start 
+        app.get("/carts", async(req ,res)=>{
+            try {
+                const email = req.query.email;
+                if(!email){
+                    res.status(403).send({message : "forbidden"})
+                }
+                let query = {cartEmail : email};
+                const carts = await CartCollection.find(query).toArray();
+              
+                    res.send(carts)
+                
 
+            } catch (error) {
+                console.log(error);
+            }
+        })
+        app.post("/carts",async(req ,res)=>{
+            try {
+             const cart = req.body;
+             const result = await CartCollection.insertOne(cart);
+             res.send(result);
+            } catch (error) {
+             console.log(error);
+            }
+         })
+         // Cart End
 
     } catch (error) {
         console.log(error);
