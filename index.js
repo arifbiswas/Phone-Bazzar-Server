@@ -28,7 +28,7 @@ async function run(){
             if(!dbUser){
                 res.status(403).send({message : "forbidden"})
             }
-            console.log(dbUser);
+            // console.log(dbUser);
             if(dbUser){
                 res.send(dbUser)
             }
@@ -116,7 +116,7 @@ async function run(){
         app.patch("/verified/:id",async(req,res)=>{
             try {
                 const id = req.params.id;
-                console.log(id);
+                // console.log(id);
                 let query = {_id : ObjectId(id)}
                 // const status = req.body;
                 const result = await UserCollection.updateOne(query,{$set:{
