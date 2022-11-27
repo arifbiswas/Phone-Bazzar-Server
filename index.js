@@ -28,8 +28,10 @@ async function run(){
             if(!dbUser){
                 res.status(403).send({message : "forbidden"})
             }
-
-            res.send(dbUser)
+            console.log(dbUser);
+            if(dbUser){
+                res.send(dbUser)
+            }
             } catch (error) {
                 console.log(error);
             }
@@ -81,11 +83,13 @@ async function run(){
             }
             if(!dbUser){
                 if(user.role){
+                    user.verified = false;
                     const result = await UserCollection.insertOne(user)
                     res.send(result);
                 }
                 if(!user.role){
                     user.role = "buyer";
+                    user.verified = false;
                     const result = await UserCollection.insertOne(user)
                 res.send(result);
                 }
@@ -98,6 +102,7 @@ async function run(){
         }
         })
 
+         
         app.get("/unverified", async(req,res)=>{
             try {
                 const query = {verified : false}
