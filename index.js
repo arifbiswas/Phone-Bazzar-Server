@@ -19,17 +19,17 @@ async function run(){
         const CartCollection = Client.db("PhoneBazaar").collection("cart")
 
 
-        // role cheack 
-        app.get("/role" ,async(req , res)=>{
+        //For role cheack And verified get dbUser mention API Context
+        app.get("/dbUser" ,async(req , res)=>{
             try {
                 const email = req.query.email;
             const query = {email : email}
-            const dbEmail = await UserCollection.findOne(query);
-            if(!dbEmail){
+            const dbUser = await UserCollection.findOne(query);
+            if(!dbUser){
                 res.status(403).send({message : "forbidden"})
             }
 
-            res.send({role : dbEmail.role})
+            res.send(dbUser)
             } catch (error) {
                 console.log(error);
             }
@@ -97,6 +97,56 @@ async function run(){
             console.log(e);
         }
         })
+
+        app.get("/unverified", async(req,res)=>{
+            try {
+                const query = {verified : false}
+            const unverifiedProducts = await UserCollection.find(query).toArray();
+            res.send(unverifiedProducts);
+            } catch (error) {
+                console.log(error);
+            }
+        })
+
+        app.patch("/verified/:id",async(req,res)=>{
+            try {
+                const id = req.params.id;
+                console.log(id);
+                let query = {_id : ObjectId(id)}
+                // const status = req.body;
+                const result = await UserCollection.updateOne(query,{$set:{
+                    verified : true
+                }})
+
+                const dbUser = await UserCollection.findOne(query);
+                const email = dbUser.email;
+                // console.log(email);
+                
+                    query = {
+                        email : email
+                    }
+                   const products  =   await ProductsCollection.updateMany(query,{$set:{
+                    verified : true
+                    
+                }})
+                res.send({result,products});
+
+            } catch (error) {
+                console.log(error);
+            }
+        })
+
+        app.delete("/users/:id",async(req,res)=>{
+            try {
+                const id = req.params.id;
+                const query = {_id : ObjectId(id)}
+                const result = await UserCollection.deleteOne(query)
+                res.send(result);
+            } catch (error) {
+                console.log(error);
+            }
+        })
+
         // UserCollection End 
 
         // ProductsCollection 
@@ -134,15 +184,7 @@ async function run(){
             const product = await ProductsCollection.findOne(query);
             res.send(product);
         })
-        app.get("/unverified", async(req,res)=>{
-            try {
-                const query = {verified : false}
-            const unverifiedProducts = await ProductsCollection.find(query).toArray();
-            res.send(unverifiedProducts);
-            } catch (error) {
-                console.log(error);
-            }
-        })
+        
         
         app.get("/advertisement", async(req,res)=>{
             try {
@@ -193,20 +235,7 @@ async function run(){
             }
         })
 
-        app.patch("/verified/:id",async(req,res)=>{
-            try {
-                const id = req.params.id;
-                const query = {_id : ObjectId(id)}
-                const status = req.body;
-                const result = await ProductsCollection.updateOne(query,{$set:{
-                    verified : true
-                }})
-                res.send(result);
-
-            } catch (error) {
-                console.log(error);
-            }
-        })
+       
         app.delete("/products/:id",async(req,res)=>{
             try {
                 const id = req.params.id;
@@ -224,8 +253,8 @@ async function run(){
         //     try {
         //         const query = {}
         //         const status = req.body;
-        //         const result = await ProductsCollection.updateMany(query,{$set:{
-        //             advertisement : false
+        //         const result = await UserCollection.updateMany(query,{$set:{
+        //             verified : false
         //         }})
         //         res.send(result);
 
