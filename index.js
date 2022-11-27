@@ -15,7 +15,7 @@ async function run(){
         const CategoriesCollection = Client.db("PhoneBazaar").collection("categories")
         const UserCollection = Client.db("PhoneBazaar").collection("user")
         const ProductsCollection = Client.db("PhoneBazaar").collection("products")
-        const OrderCollection = Client.db("PhoneBazaar").collection("orders")
+        const BookedCollection = Client.db("PhoneBazaar").collection("booked")
         const CartCollection = Client.db("PhoneBazaar").collection("cart")
 
 
@@ -104,28 +104,56 @@ async function run(){
         app.get("/products",async(req , res)=>{
             const name = req.query.name;
             const email = req.query.email;
-            let query = {}
+            let query = { }
              if(name){
                 query = {
-                    productCategory : name
+                    productCategory : name,
+                    
                 }
              }
              if(email){
                 query = {
-                    email : email
+                    email : email,
+                    
                 }
              }
 
             const products = await ProductsCollection.find(query).toArray();
             res.send(products);
         })
+        app.get("/categories/:name",async(req , res)=>{
+            const name = req.params.name;
+            const query = {productCategory : name ,status : "available"}
+            const products = await ProductsCollection.find(query).toArray();
+            res.send(products);
+        })
         
         app.get("/product/:id", async(req,res)=>{
             const id = req.params.id;
-            const query = {_id : ObjectId(id)}
+            const query = {_id : ObjectId(id) ,status : "available"}
             const product = await ProductsCollection.findOne(query);
             res.send(product);
         })
+        app.get("/unverified", async(req,res)=>{
+            try {
+                const query = {verified : false}
+            const unverifiedProducts = await ProductsCollection.find(query).toArray();
+            res.send(unverifiedProducts);
+            } catch (error) {
+                console.log(error);
+            }
+        })
+        
+        app.get("/advertisement", async(req,res)=>{
+            try {
+                const query = {advertisement : true , status : "available"}
+            const advertisementProducts = await ProductsCollection.find(query).toArray();
+            res.send(advertisementProducts);
+            } catch (error) {
+                console.log(error);
+            }
+        })
+        
          // addProduct 
         app.post("/products",async(req,res)=>{
             try {
@@ -136,20 +164,89 @@ async function run(){
                 console.log(error);
             }
         })
+        app.patch("/products/:id",async(req,res)=>{
+            try {
+                const id = req.params.id;
+                const query = {_id : ObjectId(id)}
+                const status = req.body;
+                const result = await ProductsCollection.updateOne(query,{$set:{
+                    status : status.status
+                }})
+                res.send(result);
+
+            } catch (error) {
+                console.log(error);
+            }
+        })
+
+        app.patch("/advertisement/:id",async(req,res)=>{
+            try {
+                const id = req.params.id;
+                const query = {_id : ObjectId(id)}
+                const advertisement = req.body;
+                const result = await ProductsCollection.updateOne(query, {$set:{
+                    advertisement : advertisement.advertisement
+                }})
+                res.send(result);
+            } catch (error) {
+                console.log(error);
+            }
+        })
+
+        app.patch("/verified/:id",async(req,res)=>{
+            try {
+                const id = req.params.id;
+                const query = {_id : ObjectId(id)}
+                const status = req.body;
+                const result = await ProductsCollection.updateOne(query,{$set:{
+                    verified : true
+                }})
+                res.send(result);
+
+            } catch (error) {
+                console.log(error);
+            }
+        })
+        app.delete("/products/:id",async(req,res)=>{
+            try {
+                const id = req.params.id;
+                const query = {_id : ObjectId(id)}
+                const result = await ProductsCollection.deleteOne(query)
+                res.send(result);
+            } catch (error) {
+                console.log(error);
+            }
+        })
+      
+
+        // template of many data push db 
+        // app.patch("/products",async(req,res)=>{
+        //     try {
+        //         const query = {}
+        //         const status = req.body;
+        //         const result = await ProductsCollection.updateMany(query,{$set:{
+        //             advertisement : false
+        //         }})
+        //         res.send(result);
+
+        //     } catch (error) {
+        //         console.log(error);
+        //     }
+        // })
         // addProduct End
 
-        // Orders Porducts 
+        // booked Porducts 
 
-        app.get("/orders", async(req ,res)=>{
+        app.get("/booked", async(req ,res)=>{
             try {
                 const email = req.query.email;
                 if(!email){
                     res.status(403).send({message : "forbidden"})
                 }
-                let query = {orderEmail : email};
-                const orders = await OrderCollection.find(query).toArray();
+                let query = {email : email };
+                const booked = await BookedCollection.find(query).toArray();
               
-                    res.send(orders)
+                    res.send(booked)
                 
 
             } catch (error) {
@@ -157,16 +254,31 @@ async function run(){
             }
         })
 
-        app.post("/orders",async(req ,res)=>{
+        app.patch("/booked/:id",async(req,res)=>{
+            try {
+                const id = req.params.id;
+                const query = {productId : id }
+                const status = req.body;
+                const result = await BookedCollection.updateOne(query,{$set:{
+                    status : status.status
+                }})
+                res.send(result);
+
+            } catch (error) {
+                console.log(error);
+            }
+        })
+
+        app.post("/booked",async(req ,res)=>{
            try {
-            const order = req.body;
-            const result = await OrderCollection.insertOne(order);
+            const booked = req.body;
+            const result = await BookedCollection.insertOne(booked);
             res.send(result);
            } catch (error) {
             console.log(error);
            }
         })
-        // Orders Porducts End
+        // booked Porducts End
         // Cart Start 
         app.get("/carts", async(req ,res)=>{
             try {
@@ -174,7 +286,7 @@ async function run(){
                 if(!email){
                     res.status(403).send({message : "forbidden"})
                 }
-                let query = {cartEmail : email};
+                let query = {buyerEmail : email};
                 const carts = await CartCollection.find(query).toArray();
               
                     res.send(carts)
@@ -184,6 +296,14 @@ async function run(){
                 console.log(error);
             }
         })
+
+        app.delete("/carts/:id",async(req, res)=>{
+            const id = req.params.id;
+            const filter = { _id : ObjectId(id)}
+            const result = await CartCollection.deleteOne(filter);
+            res.send(result);
+        })
+
         app.post("/carts",async(req ,res)=>{
             try {
              const cart = req.body;
