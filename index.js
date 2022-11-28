@@ -200,6 +200,15 @@ async function run(){
                 console.log(error);
             }
         })
+        app.get("/report", async(req,res)=>{
+            try {
+                const query = {report : true , status : "available"}
+            const reportedProducts = await ProductsCollection.find(query).toArray();
+            res.send(reportedProducts);
+            } catch (error) {
+                console.log(error);
+            }
+        })
         
          // addProduct 
         app.post("/products",async(req,res)=>{
@@ -233,6 +242,18 @@ async function run(){
                 const advertisement = req.body;
                 const result = await ProductsCollection.updateOne(query, {$set:{
                     advertisement : advertisement.advertisement
+                }})
+                res.send(result);
+            } catch (error) {
+                console.log(error);
+            }
+        })
+        app.patch("/report/:id",async(req,res)=>{
+            try {
+                const id = req.params.id;
+                const query = {_id : ObjectId(id)}
+                const result = await ProductsCollection.updateOne(query, {$set:{
+                    report : true
                 }})
                 res.send(result);
             } catch (error) {
@@ -274,14 +295,23 @@ async function run(){
         app.get("/booked", async(req ,res)=>{
             try {
                 const email = req.query.email;
-                if(!email){
+                const buyerEmail = req.query.buyerEmail;
+                // console.log(email,buyerEmail);
+                if(!email && !buyerEmail){
                     res.status(403).send({message : "forbidden"})
                 }
-                let query = {email : email };
+                if(email){
+                    let query = {email : email };
                 const booked = await BookedCollection.find(query).toArray();
               
                     res.send(booked)
-                
+                }
+                if(buyerEmail){
+                    let query = {buyerEmail : buyerEmail };
+                    const booked = await BookedCollection.find(query).toArray();
+                  
+                        res.send(booked)
+                }
 
             } catch (error) {
                 console.log(error);
@@ -341,8 +371,16 @@ async function run(){
         app.post("/carts",async(req ,res)=>{
             try {
              const cart = req.body;
-             const result = await CartCollection.insertOne(cart);
+            
+            const dbCart = await CartCollection.findOne({products_id : cart?.products_id})
+            
+            if(dbCart){
+                res.send({message : "This product already add to Cart"})
+            }else{
+                const result = await CartCollection.insertOne(cart);
              res.send(result);
+            }
+           
             } catch (error) {
              console.log(error);
             }
