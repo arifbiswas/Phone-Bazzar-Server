@@ -2,6 +2,7 @@ const express = require('express')
 const cors = require("cors");
 const { MongoClient, ObjectId } = require('mongodb');
 const app = express()
+const jwt = require('jsonwebtoken');
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 
@@ -9,6 +10,23 @@ app.use(cors())
 app.use(express.json())
 
 const Client =new MongoClient(process.env.DB_URL)
+
+async function verifyJwt(req , res , next){
+    const authorization = req.headers.authorization;
+    // console.log(authorization);
+    if(!authorization){
+        res.status(401).send({message : 'unauthorized'})
+    }
+    const token = authorization.split(" ")[1];
+    jwt.verify(token,process.env.SECRET_KEY,function(error,decoded){
+        if(error){
+            res.status(403).send({message : "forbidden"})
+        }
+        req.decoded = decoded;
+        next()
+    })
+    
+}
 
 async function run(){
     try {
@@ -20,9 +38,16 @@ async function run(){
 
 
         //For role cheack And verified get dbUser mention API Context
-        app.get("/dbUser" ,async(req , res)=>{
+        app.get("/dbUser" ,verifyJwt ,async(req , res)=>{
             try {
                 const email = req.query.email;
+                // console.log(email);
+                const decodedEmail = req.decoded;
+                // console.log(decodedEmail);
+                if(!email === decodedEmail){
+                    res.status(403).send({message : "forbidden"})
+                }
+
             const query = {email : email}
             const dbUser = await UserCollection.findOne(query);
             if(!dbUser){
@@ -78,14 +103,15 @@ async function run(){
             // console.log(user);
             const query = {email : user?.email}
             const dbUser = await UserCollection.findOne(query);
+            const token = jwt.sign(user.email,process.env.SECRET_KEY)
             if(dbUser){
-                res.send({message : "You hove already added"})
+                res.send({alreadyHave : true ,token})
             }
             if(!dbUser){
                 if(user.role){
                     user.verified = false;
                     const result = await UserCollection.insertOne(user)
-                    res.send(result);
+                    res.send({result ,token});
                 }
                 if(!user.role){
                     user.role = "buyer";
