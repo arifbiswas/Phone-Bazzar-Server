@@ -12,7 +12,8 @@ app.use(express.json())
 const Client =new MongoClient(process.env.DB_URL)
 
 async function verifyJwt(req , res , next){
-    const authorization = req.headers.authorization;
+    try {
+        const authorization = req.headers.authorization;
     // console.log(authorization);
     if(!authorization){
         res.status(401).send({message : 'unauthorized'})
@@ -25,6 +26,9 @@ async function verifyJwt(req , res , next){
         req.decoded = decoded;
         next()
     })
+    } catch (error) {
+        console.log(error.message);
+    }
     
 }
 
